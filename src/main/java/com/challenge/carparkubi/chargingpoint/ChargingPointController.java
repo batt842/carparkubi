@@ -73,7 +73,7 @@ public class ChargingPointController {
 
     private void logReport(LinkedHashMap<String, String> report) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Report:");
+        sb.append("Report:\n");
 
         for (Map.Entry<String, String> e : report.entrySet()) {
             sb.append(e.getKey());
