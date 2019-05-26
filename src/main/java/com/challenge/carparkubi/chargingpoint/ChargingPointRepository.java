@@ -5,6 +5,10 @@ import org.springframework.stereotype.Repository;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * In-memory data structure
@@ -17,6 +21,7 @@ public class ChargingPointRepository {
     public static final int CURRENT_CAPACITY = 100;
     public static final int FAST_CHARGING_CURRENT = 20;
     public static final int SLOW_CHARGING_CURRENT = 10;
+    public static final long ASYNC_TIMEOUT_MILLIS = 1000;
 
     // Data structure to indicated which CP is occupied or not Simple/ordered
     private Map<String, Boolean> cpOccupancy = new LinkedHashMap<>();
@@ -34,6 +39,13 @@ public class ChargingPointRepository {
             cpOccupancy.put(ID_PREFIX + (i + 1), Boolean.FALSE);
     }
 
+    public synchronized void cleanUp() {
+        for (String k : cpOccupancy.keySet())
+            cpOccupancy.put(k, Boolean.FALSE);
+        fastChargingCps.clear();
+        slowChargingCps.clear();
+    }
+
     public boolean exists(String id) {
         return cpOccupancy.containsKey(id);
     }
@@ -42,9 +54,21 @@ public class ChargingPointRepository {
         return cpOccupancy.get(id);
     }
 
-    public synchronized void charge(String id, ChargingType type) {
+    public void charge(String id, ChargingType type) throws ExecutionException {
+        // Use a timeout call to prevent thread-unsafe and race condition at the same time
+        // The subsequent call(charge_sync) should be finished in a certain time
+        // because this can cause too many threads.
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> charge_sync(id, type));
+        try {
+            future.get(ASYNC_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+            throw new ExecutionException(e);
+        }
+    }
+
+    private synchronized void charge_sync(String id, ChargingType type) {
         cpOccupancy.put(id, Boolean.TRUE);
-        switch(type) {
+        switch (type) {
             case Fast:
                 fastChargingCps.offer(id);
                 break;
@@ -54,7 +78,19 @@ public class ChargingPointRepository {
         }
     }
 
-    public synchronized void unplug(String id) {
+    public void unplug(String id) throws ExecutionException {
+        // Use a timeout call to prevent thread-unsafe and race condition at the same time
+        // The subsequent call(unplug_sync) should be finished in a certain time
+        // because this can cause too many threads.
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> unplug_sync(id));
+        try {
+            future.get(ASYNC_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+            throw new ExecutionException(e);
+        }
+    }
+
+    private synchronized void unplug_sync(String id) {
         cpOccupancy.put(id, Boolean.FALSE);
         if (fastChargingCps.contains(id))
             fastChargingCps.remove(id);
@@ -74,7 +110,9 @@ public class ChargingPointRepository {
             return false;
         if (CURRENT_CAPACITY - getCurrentCurrent() < FAST_CHARGING_CURRENT - SLOW_CHARGING_CURRENT)
             return false;
-        fastChargingCps.offer(slowChargingCps.poll());
+
+        // switch the newest to fast-charging
+        fastChargingCps.offer(slowChargingCps.pollLast());
         return true;
     }
 
@@ -86,7 +124,22 @@ public class ChargingPointRepository {
         return null; // it's not recommended to return null, but...
     }
 
-    public synchronized LinkedHashMap<String, String> getAllStatus() {
+    public LinkedHashMap<String, String> getAllStatus() throws ExecutionException {
+        // Use a timeout call to prevent thread-unsafe and race condition at the same time
+        // The subsequent call(getAllStatus_sync) should be finished in a certain time
+        // because this can cause too many threads.
+        CompletableFuture<LinkedHashMap<String, String>> future =
+                CompletableFuture.supplyAsync(() -> getAllStatus_sync());
+        try {
+            return future.get(ASYNC_TIMEOUT_MILLIS, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new ExecutionException(e);
+        } catch (TimeoutException e) {
+            throw new ExecutionException(e);
+        }
+    }
+
+    private synchronized LinkedHashMap<String, String> getAllStatus_sync() {
         LinkedHashMap<String, String> allStatus = new LinkedHashMap<>();
         for (Map.Entry<String, Boolean> cp : cpOccupancy.entrySet()) {
 

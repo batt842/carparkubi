@@ -1,7 +1,6 @@
 package com.challenge.carparkubi.chargingpoint;
 
 import com.challenge.carparkubi.chargingpoint.exception.ChargingPointNotFoundException;
-import com.challenge.carparkubi.chargingpoint.exception.ChargingPointShortOfCurrentException;
 import com.challenge.carparkubi.chargingpoint.exception.ChargingPointUnavailableException;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +80,7 @@ public class ChargingPointServiceTest {
     }
 
     /**
-     * Test if oldest slow-charging CP is switched to fast-charging
+     * Test if the newest slow-charging CP is switched to fast-charging
      */
     @Test
     public void unplug() throws Exception {
@@ -98,7 +97,8 @@ public class ChargingPointServiceTest {
 
         service.unplug("CP7");
 
-        assertEquals(ChargingType.Fast, repository.getChargingType("CP1"));
-        assertEquals(ChargingType.Slow, repository.getChargingType("CP2"));
+        assertEquals(ChargingType.Slow, repository.getChargingType("CP1"));
+        assertEquals(ChargingType.Slow, repository.getChargingType("CP9"));
+        assertEquals(ChargingType.Fast, repository.getChargingType("CP10"));
     }
 }

@@ -2,6 +2,7 @@ package com.challenge.carparkubi;
 
 import com.challenge.carparkubi.chargingpoint.ChargingPointRepository;
 import com.challenge.carparkubi.chargingpoint.ChargingType;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.Assert.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,10 +32,15 @@ public class CarparkubiApplicationTests {
     @Autowired
     private ChargingPointRepository repository;
 
+    @After
+    public void teardown() {
+        repository.cleanUp();
+    }
+
     @Test
     public void plug_unplug_report() throws Exception {
         for (int i = 1; i <= 6; i++)
-            mockMvc.perform(put("/{id}/plug", "CP" + i)
+            mockMvc.perform(post("/v1/cps/{id}", "CP" + i)
                     .contentType("application/json"))
                     .andExpect(status().isOk());
 
@@ -44,11 +49,11 @@ public class CarparkubiApplicationTests {
         assertEquals(ChargingType.Fast, repository.getChargingType("CP3"));
         assertEquals(ChargingType.Fast, repository.getChargingType("CP6"));
 
-        mockMvc.perform(put("/{id}/unplug", "CP3")
+        mockMvc.perform(delete("/v1/cps/{id}", "CP3")
                 .contentType("application/json"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/report").contentType("application/json"))
+        mockMvc.perform(get("/v1/cps/report").contentType("application/json"))
                 .andDo(print())
                 .andExpect(content().string(
                         "{\"CP1\":\"OCCUPIED 20A\",\"CP2\":\"OCCUPIED 20A\"," +
@@ -61,5 +66,19 @@ public class CarparkubiApplicationTests {
         assertFalse(repository.isCharging("CP3"));
         assertNull(repository.getChargingType("CP3"));
         assertEquals(ChargingType.Fast, repository.getChargingType("CP6"));
+    }
+
+    @Test
+    public void plug_exception() throws Exception {
+        mockMvc.perform(post("/v1/cps/{id}", "CP100")
+                .contentType("application/json"))
+                .andExpect(content().string("{\"message\":\"Resource not found\"}"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void report_after_clear() throws Exception {
+        mockMvc.perform(get("/v1/cps/report").contentType("application/json"))
+                .andDo(print());
     }
 }

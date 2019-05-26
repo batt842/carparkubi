@@ -3,6 +3,8 @@ package com.challenge.carparkubi.chargingpoint;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.ExecutionException;
+
 import static org.junit.Assert.*;
 
 /**
@@ -35,7 +37,7 @@ public class ChargingPointRepositoryTest {
      * Test a simple functionality
      */
     @Test
-    public void charge() {
+    public void charge() throws ExecutionException {
         assertFalse(repository.isCharging("CP1"));
         assertNull(repository.getChargingType("CP1"));
 
@@ -52,7 +54,7 @@ public class ChargingPointRepositoryTest {
      * Test a simple functionality
      */
     @Test
-    public void unplug() {
+    public void unplug() throws ExecutionException {
         repository.charge("CP1", ChargingType.Fast);
         repository.unplug("CP1");
         assertFalse(repository.isCharging("CP1"));
@@ -63,7 +65,7 @@ public class ChargingPointRepositoryTest {
      * Test a simple functionality
      */
     @Test
-    public void switchOneFastToSlow() {
+    public void switchOneFastToSlow() throws ExecutionException {
         assertFalse(repository.switchOneFastToSlow());
 
         repository.charge("CP1", ChargingType.Fast);
@@ -81,7 +83,7 @@ public class ChargingPointRepositoryTest {
      * Test a simple functionality and an edge case
      */
     @Test
-    public void switchOneSlowToFast() {
+    public void switchOneSlowToFast() throws ExecutionException {
         assertFalse(repository.switchOneSlowToFast());
 
         // use 90A
@@ -99,16 +101,16 @@ public class ChargingPointRepositoryTest {
         assertEquals(ChargingType.Fast, repository.getChargingType("CP1"));
         assertEquals(ChargingType.Fast, repository.getChargingType("CP2"));
         assertEquals(ChargingType.Fast, repository.getChargingType("CP3"));
-        assertEquals(ChargingType.Fast, repository.getChargingType("CP4"));
+        assertEquals(ChargingType.Slow, repository.getChargingType("CP4"));
         assertEquals(ChargingType.Slow, repository.getChargingType("CP5"));
-        assertEquals(ChargingType.Slow, repository.getChargingType("CP6"));
+        assertEquals(ChargingType.Fast, repository.getChargingType("CP6"));
     }
 
     /**
      * Test a simple functionality and an edge case
      */
     @Test
-    public void isChargingAvailable() {
+    public void isChargingAvailable() throws ExecutionException {
         // use 90A
         repository.charge("CP1", ChargingType.Fast);
         repository.charge("CP2", ChargingType.Fast);
@@ -130,7 +132,7 @@ public class ChargingPointRepositoryTest {
      * Test a simple functionality
      */
     @Test
-    public void getAllStatus() {
+    public void getAllStatus() throws ExecutionException {
         repository.charge("CP1", ChargingType.Fast);
         repository.charge("CP2", ChargingType.Fast);
         repository.charge("CP3", ChargingType.Fast);

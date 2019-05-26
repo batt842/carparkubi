@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class ChargingPointService {
@@ -29,7 +30,7 @@ public class ChargingPointService {
      * @throws ChargingPointNotFoundException
      * @throws ChargingPointShortOfCurrentException
      */
-    public ChargingType plug(String id) throws ChargingPointUnavailableException, ChargingPointNotFoundException, ChargingPointShortOfCurrentException {
+    public ChargingType plug(String id) throws ChargingPointUnavailableException, ChargingPointNotFoundException, ChargingPointShortOfCurrentException, ExecutionException {
         if (!repository.exists(id))
             throw new ChargingPointNotFoundException(id + " is not found.");
 
@@ -60,7 +61,7 @@ public class ChargingPointService {
      * @throws ChargingPointNotFoundException
      * @throws ChargingPointNotActiveException
      */
-    public void unplug(String id) throws ChargingPointNotFoundException, ChargingPointNotActiveException {
+    public void unplug(String id) throws ChargingPointNotFoundException, ChargingPointNotActiveException, ExecutionException {
         if (!repository.exists(id))
             throw new ChargingPointNotFoundException(id + " is not found.");
 
@@ -73,7 +74,7 @@ public class ChargingPointService {
         while (repository.switchOneSlowToFast()) ;
     }
 
-    public LinkedHashMap<String, String> report() {
+    public LinkedHashMap<String, String> report() throws ExecutionException {
         return repository.getAllStatus();
     }
 }

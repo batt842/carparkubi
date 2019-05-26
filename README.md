@@ -28,36 +28,39 @@ CP10 AVAILABLE
 ```
 
 ## APIs
-### /{id}/plug
+### POST /v1/cps/{id}
 It is called when you plug a car to a CP.
 
-### /{id}/unplug
+### DELETE /v1/cps/{id}
 It is called when you unplug a car from a CP.
+
+### GET /v1/cps/report
+It shows the overall report of all CPs.
 
 ### API use-case
 ```
-$ curl -XPUT "http://localhost:8080/CP1/plug"
+$ curl -XPOST "http://localhost:8080/v1/cps/CP1"
 {"result":"OK","type":"Fast"}
-$ curl -XPUT "http://localhost:8080/CP2/plug"
+$ curl -XPOST "http://localhost:8080/v1/cps/CP2"
 {"result":"OK","type":"Fast"}
-$ curl -XPUT "http://localhost:8080/CP1/unplug"
+$ curl -XDELETE "http://localhost:8080/v1/cps/CP1"
 {"result":"OK"}
 ```
 
 This is a text formatted test case.
 When the final command is entered, CP1 will be switched into fast charging mode.
 ```
-curl -XPUT "http://localhost:8080/CP1/plug"
-curl -XPUT "http://localhost:8080/CP2/plug"
-curl -XPUT "http://localhost:8080/CP3/plug"
-curl -XPUT "http://localhost:8080/CP4/plug"
-curl -XPUT "http://localhost:8080/CP5/plug"
-curl -XPUT "http://localhost:8080/CP6/plug"
-curl -XPUT "http://localhost:8080/CP7/plug"
-curl -XPUT "http://localhost:8080/CP8/plug"
-curl -XPUT "http://localhost:8080/CP9/plug"
-curl -XPUT "http://localhost:8080/CP10/plug"
-curl -XPUT "http://localhost:8080/CP7/unplug"
+curl -XPOST "http://localhost:8080/v1/cps/CP1"
+curl -XPOST "http://localhost:8080/v1/cps/CP2"
+curl -XPOST "http://localhost:8080/v1/cps/CP3"
+curl -XPOST "http://localhost:8080/v1/cps/CP4"
+curl -XPOST "http://localhost:8080/v1/cps/CP5"
+curl -XPOST "http://localhost:8080/v1/cps/CP6"
+curl -XPOST "http://localhost:8080/v1/cps/CP7"
+curl -XPOST "http://localhost:8080/v1/cps/CP8"
+curl -XPOST "http://localhost:8080/v1/cps/CP9"
+curl -XPOST "http://localhost:8080/v1/cps/CP10"
+curl -XDELETE "http://localhost:8080/v1/cps/CP7"
 ```
 
 ## How to run the Unit/Integration Tests
